@@ -7,11 +7,13 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   sys_status.mac = mac;
 
   // check the identity of Tx
+#ifdef CheckMac
   char macStr[18];
   memcpy(&macStr, mac, sizeof(macStr));
   for (int i; i < 6; i++) {
     if (macStr[i] != TxMacAddr[i]) return;
   }
+#endif
 
   memcpy(&data, incomingData, sizeof(data));
   lastRecvTime = millis(); 

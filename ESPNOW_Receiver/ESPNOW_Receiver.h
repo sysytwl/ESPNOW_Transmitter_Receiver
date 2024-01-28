@@ -3,6 +3,9 @@
 #include <WiFi.h>
 #include <Arduino.h>
 
+// Check Tx identity
+#define CheckMac
+
 // Set the wifi channel (1-13)
 #define channel_ 6
 
