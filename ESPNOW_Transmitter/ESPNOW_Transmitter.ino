@@ -6,7 +6,7 @@ void setup() {
   Serial.begin(115200);
   //WiFi.mode(WIFI_STA);
 
-  ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
+  ESP_ERROR_CHECK(esp_wifi_set_channel(channel_, WIFI_SECOND_CHAN_NONE));
   if (esp_now_init() != ESP_OK) {   // Init ESP-NOW
     Serial.println("Error initializing ESP-NOW");
   } else {
@@ -18,7 +18,7 @@ void setup() {
   // Register peer
   esp_now_peer_info_t peerInfo;
   memcpy(peerInfo.peer_addr, RxMacAddr, 6);
-  peerInfo.channel = channel;  
+  peerInfo.channel = channel_;  
   peerInfo.encrypt = false;
   
   // Add peer        

@@ -1,9 +1,10 @@
 #include <esp_now.h>
+#include <esp_wifi.h>
 #include <WiFi.h>
 #include <Arduino.h>
 
 // Set the wifi channel (1-13)
-#define channel 6
+#define channel_ 6
 
 // REPLACE WITH YOUR RECEIVER MAC Address
 uint8_t RxMacAddr[] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};

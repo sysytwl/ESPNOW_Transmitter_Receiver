@@ -5,6 +5,14 @@
 // callback function that will be executed when data is received
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   sys_status.mac = mac;
+
+  // check the identity of Tx
+  char macStr[18];
+  memcpy(&macStr, mac, sizeof(macStr));
+  for (int i; i < 6; i++) {
+    if (macStr[i] != TxMacAddr[i]) return;
+  }
+
   memcpy(&data, incomingData, sizeof(data));
   lastRecvTime = millis(); 
 }
@@ -13,7 +21,7 @@ void setup(){
   Serial.begin(115200);
   //WiFi.mode(WIFI_STA);
 
-  ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
+  ESP_ERROR_CHECK(esp_wifi_set_channel(channel_, WIFI_SECOND_CHAN_NONE));
   if (esp_now_init() != ESP_OK) {   // Init ESP-NOW
     Serial.println("Error initializing ESP-NOW");
   } else {
