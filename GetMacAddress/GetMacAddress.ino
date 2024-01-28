@@ -7,6 +7,6 @@ void setup() {
  
 void loop() {
   delay(5000);
-  Serial.print("This Tx Mac is:");
+  Serial.print("My Mac is:");
   Serial.println(WiFi.macAddress());
 }
