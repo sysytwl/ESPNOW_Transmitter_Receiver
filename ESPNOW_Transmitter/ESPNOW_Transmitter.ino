@@ -4,9 +4,14 @@
 
 void setup() {
   Serial.begin(115200);
-  //WiFi.mode(WIFI_STA);
 
-  ESP_ERROR_CHECK(esp_wifi_set_channel(channel_, WIFI_SECOND_CHAN_NONE));
+  WiFi.mode(WIFI_STA);
+  WiFi.setTxPower(WIFI_POWER_MINUS_1dBm);
+  WiFi.channel(channel_);
+
+  //esp_wifi_start();
+  //ESP_ERROR_CHECK(esp_wifi_set_channel(channel_, WIFI_SECOND_CHAN_NONE));
+
   if (esp_now_init() != ESP_OK) {   // Init ESP-NOW
     Serial.println("Error initializing ESP-NOW");
   } else {
@@ -16,9 +21,9 @@ void setup() {
   //esp_wifi_config_espnow_rate();
   
   // Register peer
-  esp_now_peer_info_t peerInfo;
+  esp_now_peer_info_t peerInfo = {};
   memcpy(peerInfo.peer_addr, RxMacAddr, 6);
-  peerInfo.channel = channel_;  
+  peerInfo.channel = 0;  
   peerInfo.encrypt = false;
   
   // Add peer        
@@ -58,5 +63,6 @@ void loop() {
   // data.ch7   = !digitalRead(22);
   // data.ch8   = !digitalRead(23);  
   
-  esp_err_t result = esp_now_send(RxMacAddr, (uint8_t *) &data, sizeof(data));
+  esp_now_send(RxMacAddr, (uint8_t *) &data, sizeof(data));
+  delay(5); //chip temperature issue
 }

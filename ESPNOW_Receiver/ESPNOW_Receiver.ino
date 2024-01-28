@@ -4,16 +4,20 @@
 
 // callback function that will be executed when data is received
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
-  sys_status.mac = mac;
-
-  // check the identity of Tx
 #ifdef CheckMac
-  char macStr[18];
-  memcpy(&macStr, mac, sizeof(macStr));
-  for (int i; i < 6; i++) {
-    if (macStr[i] != TxMacAddr[i]) return;
+  char MACAd[6];
+  memcpy(&MACAd, mac, sizeof(MACAd));
+  for (int i = 0; i < 6; i++) {
+    if (MACAd[i] != TxMacAddr[i]) return;
   }
 #endif
+
+  snprintf(sys_status.StrMac, sizeof(sys_status.StrMac), "%02x:%02x:%02x:%02x:%02x:%02x",mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+  // get RSSI
+  //wifi_pkt_rx_ctrl_t wifi_rx_status;
+
+  // check the identity of Tx
 
   memcpy(&data, incomingData, sizeof(data));
   lastRecvTime = millis(); 
@@ -21,14 +25,13 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
 
 void setup(){
   Serial.begin(115200);
-  //WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_STA);
+  WiFi.channel(channel_);
 
-  ESP_ERROR_CHECK(esp_wifi_set_channel(channel_, WIFI_SECOND_CHAN_NONE));
-  if (esp_now_init() != ESP_OK) {   // Init ESP-NOW
-    Serial.println("Error initializing ESP-NOW");
-  } else {
-    Serial.println("Succes: Initialized ESP-NOW");
-  }
+  //ESP_ERROR_CHECK(esp_wifi_set_channel(channel_, WIFI_SECOND_CHAN_NONE));
+
+  ESP_ERROR_CHECK(esp_now_init());
+
 
   esp_now_register_recv_cb(OnDataRecv);
 }
@@ -44,7 +47,9 @@ void loop(){
 
   // print out the data
   Serial.print("ReMsg from: ");
-  printMAC(sys_status.mac);
+  Serial.print(sys_status.StrMac);
+  Serial.print("  Time cost:");
+  Serial.print(sys_status.DataUpdateSpeed);
   Serial.print("  lx:");
   Serial.print(data.lxAxis);
   Serial.print("  ly:");
