@@ -1,5 +1,5 @@
 # ESPNOW_Transmitter_Receiver
-This repository contains code and diagram for 12 channel espnow transmitter and receiver
+This repository contains code and diagram for 12 channels espnow transmitter and receiver
 
 # pairing without mac: 
 https://randomnerdtutorials.com/esp-now-auto-pairing-esp32-esp8266/
