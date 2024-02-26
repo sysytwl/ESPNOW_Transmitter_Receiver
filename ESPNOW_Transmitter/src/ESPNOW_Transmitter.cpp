@@ -1,57 +1,102 @@
 #include "ESPNOW_Transmitter.h"
 #if ARDUINO_USB_MODE
 #warning This sketch should be used when USB is in OTG mode
-void setup(){}
-void loop(){}
 #else
 #include "USB.h"
 #include "USBHIDGamepad.h"
 USBHIDGamepad Gamepad;
+#endif
 
 void setup() {
+  Serial.begin();
+
+  preferences.begin("pair_data", true);
+  preferences.getBytes("RxMacAddr", RxMacAddr, 6);
+  pair_status = preferences.getBool("pair_status", false);
+  wifi_channel = preferences.getUChar("wifi_channel", 1);
+  preferences.end();
+
+#if !ARDUINO_USB_MODE
   Gamepad.begin();
   USB.begin();
-
+#endif
 
   WiFi.mode(WIFI_STA);
-  //WiFi.setTxPower(WIFI_POWER_MINUS_1dBm);
-  WiFi.channel(channel_);
+  WiFi.macAddress(TxMacAddr);
 
-  //esp_wifi_start();
-  //ESP_ERROR_CHECK(esp_wifi_set_channel(channel_, WIFI_SECOND_CHAN_NONE));
+  if(pair_status){
+    //WiFi.setTxPower(WIFI_POWER_MINUS_1dBm);
+    WiFi.channel(wifi_channel);
 
-  if (esp_now_init() != ESP_OK) {   // Init ESP-NOW
-    Serial.println("Error initializing ESP-NOW");
+    //esp_wifi_start();
+    //ESP_ERROR_CHECK(esp_wifi_set_channel(channel_, WIFI_SECOND_CHAN_NONE));
+
+    if (esp_now_init() != ESP_OK) {   // Init ESP-NOW
+      Serial.println("Error initializing ESP-NOW");
+    } else {
+      Serial.println("Succes: Initialized ESP-NOW");
+    }
+
+    //esp_wifi_config_espnow_rate();
+    
+    // Register peer
+    esp_now_peer_info_t peerInfo = {};
+    memcpy(peerInfo.peer_addr, RxMacAddr, 6);
+    peerInfo.channel = 0;  
+    peerInfo.encrypt = false;
+    
+    // Add peer        
+    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+      Serial.println("Failed to add peer");
+      return;
+    } else {
+      Serial.println("Succes: Added peer");
+    } 
+
+    TxData.syncByte = 0;
+    //esp_now_get_peer();
+
+    pinMode(ppmPin, INPUT);
+    attachInterrupt(ppmPin, handleInterrupt, RISING);
+
+    pinMode(0,INPUT_PULLUP);
+    attachInterrupt(0, pair, RISING);
   } else {
-    Serial.println("Succes: Initialized ESP-NOW");
+    TxData.syncByte = 1;
+    while(1){
+      Serial.print("Pairing request on channel "  );
+      Serial.println(wifi_channel);
+
+      // set WiFi channel
+      ESP_ERROR_CHECK(esp_wifi_set_channel(wifi_channel,  WIFI_SECOND_CHAN_NONE));
+      if (esp_now_init() != ESP_OK) Serial.println("Error initializing ESP-NOW");
+
+      // Add peer
+      esp_now_peer_info_t peerInfo = {};
+      memcpy(peerInfo.peer_addr, RxMacAddr, 6);
+      peerInfo.channel = 0;  
+      peerInfo.encrypt = false;
+      if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+        Serial.println("Failed to add peer");
+        ESP.restart();
+      }
+
+      esp_now_send(RxMacAddr, (uint8_t *) &TxData, sizeof(TxData));
+      esp_now_register_recv_cb(OnDataRecv);//try to get paired
+
+      delay(500);
+      wifi_channel ++;//Next channel
+      if (wifi_channel > MAX_CHANNEL){
+        wifi_channel = 1;
+      }
+    }
   }
-
-  //esp_wifi_config_espnow_rate();
-  
-  // Register peer
-  esp_now_peer_info_t peerInfo = {};
-  memcpy(peerInfo.peer_addr, RxMacAddr, 6);
-  peerInfo.channel = 0;  
-  peerInfo.encrypt = false;
-  
-  // Add peer        
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.println("Failed to add peer");
-    return;
-  } else {
-    Serial.println("Succes: Added peer");
-  } 
-
-  //esp_now_get_peer();
-
-  pinMode(interruptPin, INPUT);
-  attachInterrupt(interruptPin, handleInterrupt, RISING);
-
-  // pinMode(0,INPUT_PULLUP);
 }
  
 void loop() {
-  if (rawValues[0] >= 800 && rawValues[0] <= 2200){
+  if (rawValues[0] >= 800 && rawValues[0] <= 2200 && millis() - lastsendtime >= 20){// 50Hz
+    lastsendtime = millis();
+
     // data.lxAxis    = ReMap(analogRead(32), false);
     // data.lyAxis    = ReMap(analogRead(33), false);
     // data.rxAxis    = ReMap(analogRead(34), false);
@@ -82,10 +127,11 @@ void loop() {
     
     esp_now_send(RxMacAddr, (uint8_t *) &TxData, sizeof(TxData));
 
+#if !ARDUINO_USB_MODE
     Gamepad.leftStick(map(rawValues[2], 800, 2200, 128, -128), map(rawValues[3], 800, 2200, 128, -128));
     Gamepad.rightStick(map(rawValues[0], 800, 2200, 128, -128), map(rawValues[1], 800, 2200, 128, -128));
+#endif
+  } else {
+    delay(1);
   }
-
-  delay(15);
 }
-#endif /* ARDUINO_USB_MODE */
