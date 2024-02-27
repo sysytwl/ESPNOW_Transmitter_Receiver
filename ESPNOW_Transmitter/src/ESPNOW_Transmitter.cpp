@@ -63,33 +63,52 @@ void setup() {
     attachInterrupt(0, pair, RISING);
   } else {
     TxData.syncByte = 1;
+    if (esp_now_init() != ESP_OK) Serial.println("Error initializing ESP-NOW");
+    // Add peer
+    esp_now_peer_info_t peerInfo = {};
+    memcpy(peerInfo.peer_addr, BCMacAddr, 6);
+    peerInfo.channel = 0;  
+    peerInfo.encrypt = false;
+    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+      Serial.println("Failed to add peer");
+      ESP.restart();
+    }
     while(1){
       Serial.print("Pairing request on channel "  );
       Serial.println(wifi_channel);
 
       // set WiFi channel
       ESP_ERROR_CHECK(esp_wifi_set_channel(wifi_channel,  WIFI_SECOND_CHAN_NONE));
-      if (esp_now_init() != ESP_OK) Serial.println("Error initializing ESP-NOW");
 
-      // Add peer
-      esp_now_peer_info_t peerInfo = {};
-      memcpy(peerInfo.peer_addr, RxMacAddr, 6);
-      peerInfo.channel = 0;  
-      peerInfo.encrypt = false;
-      if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-        Serial.println("Failed to add peer");
-        ESP.restart();
+      esp_now_send(BCMacAddr, (uint8_t *) &TxData, sizeof(TxData));
+      esp_now_register_recv_cb(OnDataRecv);//try to get paired
+      delay(250);
+      if (pair_status){
+        break;
       }
 
-      esp_now_send(RxMacAddr, (uint8_t *) &TxData, sizeof(TxData));
-      esp_now_register_recv_cb(OnDataRecv);//try to get paired
-
-      delay(500);
       wifi_channel ++;//Next channel
       if (wifi_channel > MAX_CHANNEL){
         wifi_channel = 1;
       }
     }
+
+    preferences.begin("pair_data", false);
+    preferences.putBytes("RxMacAddr", RxMacAddr, 6);
+    preferences.putBool("pair_status", true);
+    preferences.putUChar("wifi_channel", wifi_channel);
+    preferences.end();
+
+    Serial.print("Pairing done for: ");
+    for (int i = 0; i < 6; ++i) {
+      Serial.printf("%02X", RxMacAddr[i]);
+      if (i < 5) Serial.print(":");
+    }
+
+    Serial.print("    on channel: " );
+    Serial.println(wifi_channel);    // channel used by the server
+    //ESP.restart();
+
   }
 }
  
