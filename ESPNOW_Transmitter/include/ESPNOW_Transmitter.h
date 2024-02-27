@@ -10,8 +10,9 @@ Preferences preferences;
 
 #define MAX_CHANNEL 13 // change it base on ur location
 uint8_t wifi_channel;
-uint8_t RxMacAddr[6] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+uint8_t RxMacAddr[6];
 uint8_t TxMacAddr[6];
+uint8_t BCMacAddr[] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
 bool pair_status; // pair status
 
 #define ppmPin 36
