@@ -1,5 +1,5 @@
 #include "ESPNOW_Transmitter.h"
-#if ARDUINO_USB_MODE
+#if ARDUINO_USB_MODE || !esp32s3
 #warning This sketch should be used when USB is in OTG mode
 #else
 #include "USB.h"
@@ -8,15 +8,15 @@ USBHIDGamepad Gamepad;
 #endif
 
 void setup() {
-  Serial.begin();
+  Serial.begin(115200);
 
-  preferences.begin("pair_data", true);
+  preferences.begin("pair_data", false);
   preferences.getBytes("RxMacAddr", RxMacAddr, 6);
   pair_status = preferences.getBool("pair_status", false);
   wifi_channel = preferences.getUChar("wifi_channel", 1);
   preferences.end();
 
-#if !ARDUINO_USB_MODE
+#if !ARDUINO_USB_MODE && esp32s3
   Gamepad.begin();
   USB.begin();
 #endif
@@ -127,7 +127,7 @@ void loop() {
     
     esp_now_send(RxMacAddr, (uint8_t *) &TxData, sizeof(TxData));
 
-#if !ARDUINO_USB_MODE
+#if !ARDUINO_USB_MODE && esp32s3
     Gamepad.leftStick(map(rawValues[2], 800, 2200, 128, -128), map(rawValues[3], 800, 2200, 128, -128));
     Gamepad.rightStick(map(rawValues[0], 800, 2200, 128, -128), map(rawValues[1], 800, 2200, 128, -128));
 #endif
