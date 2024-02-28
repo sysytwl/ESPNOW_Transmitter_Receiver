@@ -1,5 +1,5 @@
 # ESPNOW_Transmitter_Receiver
-This repository contains code and diagram for 12 channels espnow transmitter and receiver
+This repository contains code and diagram for 8 channels espnow transmitter and receiver 
 
 # pairing without mac: 
 https://randomnerdtutorials.com/esp-now-auto-pairing-esp32-esp8266/
@@ -15,6 +15,6 @@ https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/api-reference/net
 - [ ] elrs
 - [ ] DJI motiton
 - [ ] OLED
-- [ ] pair
+- [x] pair
 - [ ] message back
 - [ ] USB joystick
