@@ -1,5 +1,5 @@
 #include "ESPNOW_Transmitter.h"
-#if ARDUINO_USB_MODE || !esp32s3
+#if ARDUINO_USB_MODE || !defined(ESP32S3)
 #warning This sketch should be used when USB is in OTG mode
 #else
 #include "USB.h"
@@ -16,7 +16,7 @@ void setup() {
   wifi_channel = preferences.getUChar("wifi_channel", 1);
   preferences.end();
 
-#if !ARDUINO_USB_MODE && esp32s3
+#if !ARDUINO_USB_MODE && defined(ESP32S3)
   Gamepad.begin();
   USB.begin();
 #endif
@@ -56,7 +56,7 @@ void setup() {
     TxData.syncByte = 0;
     //esp_now_get_peer();
 
-    pinMode(ppmPin, INPUT);
+    pinMode(ppmPin, INPUT); //INPUT_PULLDOWN require R, better result when ppm is off
     attachInterrupt(ppmPin, handleInterrupt, RISING);
 
     pinMode(0,INPUT_PULLUP);
@@ -73,24 +73,21 @@ void setup() {
       Serial.println("Failed to add peer");
       ESP.restart();
     }
-    while(1){
-      Serial.print("Pairing request on channel "  );
-      Serial.println(wifi_channel);
-
-      // set WiFi channel
-      ESP_ERROR_CHECK(esp_wifi_set_channel(wifi_channel,  WIFI_SECOND_CHAN_NONE));
-
-      esp_now_send(BCMacAddr, (uint8_t *) &TxData, sizeof(TxData));
-      esp_now_register_recv_cb(OnDataRecv);//try to get paired
-      delay(250);
-      if (pair_status){
-        break;
-      }
-
+    while(!pair_status){
       wifi_channel ++;//Next channel
       if (wifi_channel > MAX_CHANNEL){
         wifi_channel = 1;
       }
+
+      // Serial.print("Pairing request on channel ");
+      // Serial.println(wifi_channel);
+
+      // set WiFi channel
+      WiFi.channel(wifi_channel);
+
+      esp_now_send(BCMacAddr, (uint8_t *) &TxData, sizeof(TxData));
+      esp_now_register_recv_cb(OnDataRecv);//try to get paired
+      delay(1000);
     }
 
     preferences.begin("pair_data", false);
@@ -99,16 +96,17 @@ void setup() {
     preferences.putUChar("wifi_channel", wifi_channel);
     preferences.end();
 
-    Serial.print("Pairing done for: ");
-    for (int i = 0; i < 6; ++i) {
-      Serial.printf("%02X", RxMacAddr[i]);
-      if (i < 5) Serial.print(":");
-    }
+    Serial.println("paird");
 
-    Serial.print("    on channel: " );
-    Serial.println(wifi_channel);    // channel used by the server
-    //ESP.restart();
+    // Serial.print("Pairing done for: ");
+    // for (int i = 0; i < 6; ++i) {
+    //   Serial.printf("%02X", RxMacAddr[i]);
+    //   if (i < 5) Serial.print(":");
+    // }
 
+    // Serial.print("    on channel: " );
+    // Serial.println(wifi_channel);    // channel used by the server
+    ESP.restart();
   }
 }
  
@@ -146,7 +144,7 @@ void loop() {
     
     esp_now_send(RxMacAddr, (uint8_t *) &TxData, sizeof(TxData));
 
-#if !ARDUINO_USB_MODE && esp32s3
+#if !ARDUINO_USB_MODE && defined(ESP32S3)
     Gamepad.leftStick(map(rawValues[2], 800, 2200, 128, -128), map(rawValues[3], 800, 2200, 128, -128));
     Gamepad.rightStick(map(rawValues[0], 800, 2200, 128, -128), map(rawValues[1], 800, 2200, 128, -128));
 #endif

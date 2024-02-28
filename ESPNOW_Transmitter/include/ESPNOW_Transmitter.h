@@ -1,5 +1,5 @@
 #include <esp_now.h>
-#include <esp_wifi.h>
+//#include <esp_wifi.h>
 #include <WiFi.h>
 #include <Arduino.h>
 #include <Preferences.h>
@@ -63,7 +63,7 @@ void IRAM_ATTR OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData,
 }
 
 
-#define ppmPin 36
+#define ppmPin 23
 #define channelAmount 8
 // Arrays for keeping track of channel values
 unsigned long rawValues[channelAmount];
